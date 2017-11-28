@@ -1,0 +1,52 @@
+<html>
+
+    <head>
+        <title>Websock Simple Client</title>
+        <script src="util.js"></script>
+        <script src="websock.js"></script>
+        <script src="zmq.js"></script>
+    </head>
+
+    <body>
+        WebSocket/websockify URI: <input id='target'>&nbsp;
+        <input id='connectButton' type='button' value='Connect'
+            onclick="connect();">
+        <br> <br>
+        Log:<br><textarea id="messages" cols=80 rows=25></textarea>
+    </body>
+
+
+    <script>
+        var $D = function(id) { return document.getElementById(id); },
+            ws = null, msgs = $D('messages');
+        function msg(str) {
+            msgs.innerHTML += str + "\n";
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+        function connect() {
+            var uri = $D('target').value;
+            ws = new zmq.Client()
+            msg("connecting to: " + uri);
+            ws.on('connecting', function () {
+                msg("Connecting");
+            });
+            ws.on('message', function (id, fingerprint, url, slot) {
+                msg("Received: " + id + ': ' + [fingerprint, url, slot].map(zmq.b2s).join(', '));
+            });
+            ws.on('ready', function () {
+                msg("Ready");
+            });
+            ws.subscribe('');
+            ws.open(uri);
+            $D('connectButton').value = "Disconnect";
+            $D('connectButton').onclick = disconnect;
+        }
+        function disconnect() {
+            if (ws) { ws.close(); }
+            ws = null;
+            $D('connectButton').value = "Connect";
+            $D('connectButton').onclick = connect;
+        }
+    </script>
+
+</html>
