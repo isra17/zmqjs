@@ -94,6 +94,7 @@ window.zmq = {};
     }
 
     zmq.Client = function() {
+        this._pending_job = null;
         this._websocket = null;
         this._state = null;
         this._message_buffer = [];
@@ -121,6 +122,9 @@ window.zmq = {};
         },
 
         close: function() {
+            if (this._pending_job !== null) {
+              window.clearTimeout(this._pending_job);
+            }
             if (this._websocket) {
                 this._websocket.close();
                 this._websocket = null;
@@ -187,7 +191,13 @@ window.zmq = {};
                     console.error('Connection closed: ', e);
                     this._fire_event('connecting');
                 }
-                window.setTimeout(() => this._open(), 5000);
+                if (this._pending_job !== null) {
+                  window.clearTimeout(this._pending_job);
+                }
+                this._pending_job = window.setTimeout(() => {
+                  this._pending_job = null;
+                  this._open();
+                }, 5000);
             }
             this.connected = false;
             this._websocket = null;
